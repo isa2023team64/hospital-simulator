@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import isa2023team64.hospitalsimulator.hospitalsimulator.model.Contract;
 import isa2023team64.hospitalsimulator.hospitalsimulator.model.Equipment;
+import isa2023team64.hospitalsimulator.hospitalsimulator.model.Hospital;
 import isa2023team64.hospitalsimulator.hospitalsimulator.model.Order;
 
 @SpringBootApplication
@@ -42,7 +43,8 @@ public class HospitalSimulatorApplication {
 				System.out.println("Choose option:");
 				System.out.println("	0. Exit program.");
 				System.out.println("	1. Get all available equipment.");
-				System.out.println("	2. Sign contract.");
+				System.out.println("	2. Get all hospitals.");
+				System.out.println("	3. Sign contract.");
 				System.out.println("Your option: ");
 				scanner = new Scanner(System.in);
 
@@ -56,6 +58,12 @@ public class HospitalSimulatorApplication {
 							}
 							break;
 						case 2:
+							Collection<Hospital> allHospitals = getAllHospitals(restTemplate);
+							for (var hospital : allHospitals) {
+								System.out.println("	" + hospital.getId() + " - " + hospital.getName());
+							}
+							break;
+						case 3:
 							createContract(restTemplate, scanner, kafkaTemplate);
 							break;
 						case 0:
@@ -88,22 +96,41 @@ public class HospitalSimulatorApplication {
 
 	private Collection<Equipment> getAllEquipment(RestTemplate restTemplate) {
 		ResponseEntity<Collection<Equipment>> responseEntity = restTemplate.exchange(
-                "http://localhost:8080/api/equipment",
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<Collection<Equipment>>() {});
+				"http://localhost:8080/api/equipment",
+				HttpMethod.GET,
+				null,
+				new ParameterizedTypeReference<Collection<Equipment>>() {});
 
-        Collection<Equipment> equipments = responseEntity.getBody();
+		Collection<Equipment> equipments = responseEntity.getBody();
 		
 		return equipments;
 	}
 
+	private Collection<Hospital> getAllHospitals(RestTemplate restTemplate) {
+		ResponseEntity<Collection<Hospital>> responseEntity = restTemplate.exchange(
+				"http://localhost:8080/api/hospital",
+				HttpMethod.GET,
+				null,
+				new ParameterizedTypeReference<Collection<Hospital>>() {});
+
+		Collection<Hospital> hospitals = responseEntity.getBody();
+		
+		return hospitals;
+	}
+
 	private void createContract(RestTemplate restTemplate, Scanner scanner, KafkaTemplate<String, Contract> kafkaTemplate) {
 		Collection<Equipment> allEquipment = getAllEquipment(restTemplate);
+		Collection<Hospital> allHospitals = getAllHospitals(restTemplate);
 
 		try {
 			System.out.print("Enter your hospital ID: ");
 			int hospitalId = Integer.parseInt(scanner.nextLine());
+
+			var hospital = allEquipment.stream().filter(e -> e.getId() == hospitalId).findFirst().orElse(null);
+			if (hospital == null) {
+				System.out.println("Hospital with ID=" + hospitalId + " doesn't exist.");
+				return;
+			}
 
 			System.out.println("Enter delivery day in month: ");
 			int day = Integer.parseInt(scanner.nextLine());
