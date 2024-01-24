@@ -16,9 +16,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import isa2023team64.hospitalsimulator.hospitalsimulator.model.Contract;
 import isa2023team64.hospitalsimulator.hospitalsimulator.model.Equipment;
 import isa2023team64.hospitalsimulator.hospitalsimulator.model.Order;
 
@@ -30,7 +32,7 @@ public class HospitalSimulatorApplication {
 	}
 
 	@Bean
-	CommandLineRunner commandLineRunner(RestTemplate restTemplate) {
+	CommandLineRunner commandLineRunner(RestTemplate restTemplate, KafkaTemplate<String, Contract> kafkaTemplate) {
 		return args -> {
 			Scanner scanner = new Scanner(System.in);
 
@@ -54,10 +56,10 @@ public class HospitalSimulatorApplication {
 							}
 							break;
 						case 2:
-							createContract(restTemplate, scanner);
+							createContract(restTemplate, scanner, kafkaTemplate);
 							break;
 						case 0:
-							System.out.println("izlaz");
+							System.out.println("Program exited.");
 							break;
 						default:
 							System.out.println("Invalid option!");
@@ -96,7 +98,7 @@ public class HospitalSimulatorApplication {
 		return equipments;
 	}
 
-	private void createContract(RestTemplate restTemplate, Scanner scanner) {
+	private void createContract(RestTemplate restTemplate, Scanner scanner, KafkaTemplate<String, Contract> kafkaTemplate) {
 		Collection<Equipment> allEquipment = getAllEquipment(restTemplate);
 
 		try {
@@ -150,9 +152,14 @@ public class HospitalSimulatorApplication {
 				System.out.println(order.getEquipmentId() + " " + order.getQuantity());
 			}
 
+			Contract contract = new Contract(hospitalId, orders, day);
+
+			kafkaTemplate.send("contract", contract);
+
 		} catch (NumberFormatException e) {
 			System.out.println("Invalid input!");
 			return;
 		}
 	}
+
 }
