@@ -93,7 +93,7 @@ public class HospitalSimulatorApplication {
 
 	private Collection<Equipment> getAllEquipment(RestTemplate restTemplate) {
 		ResponseEntity<Collection<Equipment>> responseEntity = restTemplate.exchange(
-				"http://localhost:8002/api/equipment",
+				"http://localhost:8080/api/equipment",
 				HttpMethod.GET,
 				null,
 				new ParameterizedTypeReference<Collection<Equipment>>() {});
@@ -105,7 +105,7 @@ public class HospitalSimulatorApplication {
 
 	private Collection<Hospital> getAllHospitals(RestTemplate restTemplate) {
 		ResponseEntity<Collection<Hospital>> responseEntity = restTemplate.exchange(
-				"http://localhost:8002/api/hospital",
+				"http://localhost:8080/api/hospital",
 				HttpMethod.GET,
 				null,
 				new ParameterizedTypeReference<Collection<Hospital>>() {});
